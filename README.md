@@ -20,9 +20,11 @@ A group is consisted of one or more jobs. Several groups of jobs are running in 
 
 The jobs in a group run in seqence of "order_id". For example, we load dimensions first and then load fact tables as shown below.
 
-' job id  job name    order id'
-'      1  load\_dim          10'
-'      2  load\_fact         20'
+```
+ job id  job name    order id'
+      1  load\_dim          10'
+      2  load\_fact         20'
+```
 
 ### Bucket
 
