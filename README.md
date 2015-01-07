@@ -20,9 +20,11 @@ A group is consisted of one or more jobs. Several groups of jobs are running in 
 
 The jobs in a group run in seqence of "order_id". For example, we load dimensions first and then load fact tables as shown below.
 
-> job_id  job_name    order_id
->      1  load_dim          10
->      2  load_fact         20
+```
+    job_id  job_name    order_id
+         1  load_dim          10
+         2  load_fact         20
+```
 
 ### Bucket
 
@@ -30,16 +32,20 @@ A bucket is the unit of a job. For example, a bucket for daily job is a day and 
 
 The bucket use format to indicate daily, hourly, or special bucket. For example,
 
-> day:   YYYYMMDD
-> hour:  YYYYMMDDHH
+```
+    day:   YYYYMMDD
+    hour:  YYYYMMDDHH
+```
 
 If there are more than one bucket to run, normally the launcher will select the oldest bucket to run. If the "is_batch" column is "Y", then several available buckets may be run in a job. For example, for a hourly job, we may have run hour1 hour3 hour4 hour7 in a job.
 
 Suppose we run a daily job, there are three days needs to be run, then the launcher will select oldest bucket (the day before yesterday). If "is_exact_match" column is "Y", then the launcher will select only today and previous days will never be run. 
 
-> day before yesterday  INIT
-> yesterday             INIT
-> today                 INIT
+```
+    day before yesterday  INIT
+    yesterday             INIT
+    today                 INIT
+```
 
 ### How to get bucket
 
@@ -53,19 +59,25 @@ There are many different appraoches to get the bucket.
 
 - The bucket is defined as key. For example, to run a job for previous day, we define a key named "PreviousDay". In "job_bucket" table, we can define a procedure or a script to return the bucket value.
 
-> bucket              db_proc             script
-> PreviousDay         get_prev_day        null
-> FirstDayofMonth     null                get_first_day_of_month
-> FirstDayOfWeek      null                get_first_day_of_week
+```
+    bucket              db_proc             script
+    PreviousDay         get_prev_day        null
+    FirstDayofMonth     null                get_first_day_of_month
+    FirstDayOfWeek      null                get_first_day_of_week
+```
 
 - The bucket is defined as range. For example, we need run a report with start date and end date. The bucket procedure will return a string with two values as " start end " and pass this string as parameter to the job. It is upto the script to retrive the start and end values.  
 
-> run_range_load.sh "start" "end"
+```
+    run_range_load.sh "start" "end"
+```
 	
 - The bucket can have format. If your script can handle mixed option and arguments, then you can format the bucket before returning. 
 
-> bucket      db_proc   script				format
-> MyParameter    null   get_parameter.sh	-c $1 -t $2 -f $3
+```
+    bucket      db_proc   script				format
+    MyParameter    null   get_parameter.sh	-c $1 -t $2 -f $3
+```
 
 ### Context
     
@@ -77,32 +89,42 @@ A job can have dependency. The dependency requirement must be met before the job
 
 By default, to check the parent job, the same bucket will be used. For example, a daily summary job depends on the daily data processing job. 
 
-> child_id bucket --> parent_id bucket
->        2 yyyymmdd	  1         yyyymmdd
+```
+    child_id bucket   --> parent_id bucket
+           2 yyyymmdd	          1 yyyymmdd
+```
 
 In above example, the job 2 depends on job 1 to continue.
 
-> job_id	bucket		status		timestamp
->    	1		20141215	COMPLETE	2014-12-19 17:29:52.253
->		2		20141215	INIT		2014-12-19 17:30:39.370
+```
+    job_id	bucket		status		timestamp
+         1	20141215	COMPLETE	2014-12-19 17:29:52.253
+	     2	20141215	INIT		2014-12-19 17:30:39.370
+```
 
 We may have some complex dependency like range dependency. For example, we need to run a summary job for every 6 hour, or we need to run daily job when previous 24 hours are done. 
 
-> job_id	bucket		status		timestamp
-> 		1		2014121500	COMPLETE	2014-12-19 17:29:52.253
->				........
-> 		1		2014121523	COMPLETE	2014-12-19 17:29:52.253
+```
+    job_id	bucket		status		timestamp
+         1	2014121500	COMPLETE	2014-12-19 17:29:52.253
+         	........
+         1	2014121523	COMPLETE	2014-12-19 17:29:52.253
+```
 
 In above case, all previous 24 hours job must be done before we can run daily job. we can use script to check the dependency.
 
-> job_id	dep_job_id	dep_script
->      3		     1	is_24h_done.sh		# use prev day yyyymmdd to check all 24 hours complete,
-                                            # script must handle from yyyymmdd to yyyymmddhh conversion
+```
+    job_id	dep_job_id	dep_script
+         3		     1	is_24h_done.sh	# use prev day yyyymmdd to check all 24 hours complete,
+                                        # script must handle from yyyymmdd to yyyymmddhh conversion
+```
 
 Sometimes, we need to check system dependency. For example, we nned to check if hadoop/hive/hbase is up and we do not have dependency id in this case.
 
-> job_id	dep_job_id	dep_script
-> 3		null		is_hadoop_up.sh		# system dependency
+```
+    job_id	dep_job_id	dep_script
+         3	null		is_hadoop_up.sh		# system dependency
+```
 
 ### Loop 
 	
@@ -116,11 +138,11 @@ There are three events in which can run your script. For example, you may send s
 
 The environment variable provides some extra information to the job.
 
-> PIPEJOBID       the job id
-> PIPEJOBSCRIPT   the script name
-> PIPEINOUT       the output of a script will be used to populated this variable and is used as input for next script
-> PIPEERROR       the error output of a script
-> PIPEFILE        a filename if input is too big 
+- PIPEJOBID       the job id
+- PIPEJOBSCRIPT   the script name
+- PIPEINOUT       the output of a script will be used to populated this variable and is used as input for next script
+- PIPEERROR       the error output of a script
+- PIPEFILE        a filename if input is too big 
 
 ### Script Resolver
 
