@@ -138,8 +138,8 @@ There are three events in which can run your script. For example, you may send s
 
 The environment variable provides some extra information to the job.
 
-- PIPEJOBID       the job id
-- PIPEJOBSCRIPT   the script name
+- PIPEJOBID       _the job id_
+- PIPEJOBSCRIPT   _the script name_
 - PIPEINOUT       the output of a script will be used to populated this variable and is used as input for next script
 - PIPEERROR       the error output of a script
 - PIPEFILE        a filename if input is too big 
