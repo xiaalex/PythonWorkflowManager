@@ -4,7 +4,7 @@ I use my free time to do this and I will try to get it done as soon as I can. Th
 
 The Python Workflow Manager (PWM) is a framework designed to support ETL in data warehouse environment. The framework is implemented in Python and most user program that is excutable in batch mode on command line can be run in this framework. The only requirement for the user program is that they need to accept command line options and other arguments.
 
-The workflow manager is consisted of a lot of scripts and each script accomplishes certain ETL task. There are three components in this framework, worflow manager, scheduler and logger.
+The workflow manager is consisted of a lot of scripts and each script accomplishes certain ETL task. There are two components in this framework, worflow manager and scheduler.
 
 ## Workflow
 
@@ -130,6 +130,28 @@ Sometimes, we need to check system dependency. For example, we nned to check if 
 	
 If there is a record in "job_loop", the job will be looped against all values returned from "job_loop". The values format is "vales1|values2|values3". The launcher will split the values string into array and run job in loop.
 
+### Branch
+
+The jobs are run in a group in order. This is called the master. You may create a branch to run in parallel with the master. The branch is started after a job and merged back before a job. For example, if you have a master with job id 1 to 7 and you want to branch with job 3 and 5, you can create branch like following. 
+
+```
+    branch_id  merge_id  job_in_branch
+            2         6              3
+            2         6              5
+```
+
+The jobs will be run as illustrated below.
+
+```
+    before
+    ----->  1 - 2 - 3 - 4 - 5 - 6 - 7  -------
+
+    after
+    ----->  1 - 2 -   - 4 -   - 6 - 7  -------
+                \              /
+                 \ 3  -   - 5 /
+```
+
 ### OnInit, OnSuccess and OnError
 
 There are three events in which can run your script. For example, you may send success email when a job is done.
@@ -138,13 +160,27 @@ There are three events in which can run your script. For example, you may send s
 
 The environment variable provides some extra information to the job.
 
-- PIPEJOBID       the job id
-- PIPEJOBSCRIPT   the script name
-- PIPEINOUT       the output of a script will be used to populated this variable and is used as input for next script
-- PIPEERROR       the error output of a script
-- PIPEFILE        a filename if input is too big 
+```
+    PIPEJOBID         the job id
+    PIPEJOBSCRIPT     the script name
+    PIPEINOUT         the output of a script will be used to populated this variable and 
+                      is used as input for next script
+    PIPEERROR         the error output of a script
+    PIPEFILE          a filename if input is too big
+```
 
 ### Script Resolver
 
-The path.
+The script path will be searched in the following order.
+
+1. Check `script_name` (absolute path) if it exists.
+2. Check `PWM_HOME/script/script_name` if it exists.
+4. Call script resolver under plugin directory to resolve the script path.
+
+The plugin python script must be named as "pathresolver.py" and put under plugin directory. Modify the sample under
+the example directory to resolve the path. 
+
+## Scheduler
+
+There is no cron job for a user job. The scheduling information is keept in the table "job_schedule" and it is a clone of the crontab. 
 
